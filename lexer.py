@@ -11,6 +11,10 @@
 # SE APLICA LA PRIMER REGLA SI EL PRIMER X ES TERMINAL SE AGREGA, SI ES UN NO TERMINAL REALIZA LA RECURSION PARA CALCULAR LOS
 # SIGUIENTES FIRSTS DE LA TERMINAL ENCONTRADA
 # AGREGA EL EPSILON SI SE ENCUENTRA EL CASO, ESTO LO AGREGAMOS A LA LISTA FIRST PARA PODER IR GUARDANDOLOS.
+
+from email import header
+
+
 def getTerminals (inputsaux, term, terminales, noterminales) :
     firsts = []
     for renglon in inputsaux:
@@ -27,6 +31,24 @@ def getTerminals (inputsaux, term, terminales, noterminales) :
                         firsts.append(first)
     return firsts
 
+
+def getTerminalsOnlyOne (inputsaux, term, terminales, noterminales, production) :
+    firsts = []
+    for renglon in inputsaux:
+        if renglon == production:
+            aux = renglon.split()
+            if aux[0] == term and term != aux[2]:
+                if not aux[2] in noterminales :
+                    if not aux[2] in firsts:
+                        firsts.append(aux[2])
+                else :
+                    firtsaux = []
+                    firtsaux = getTerminals(inputsaux, aux[2], terminales, noterminales)
+                    for first in firtsaux:
+                        if first not in firsts:
+                            firsts.append(first)
+    return firsts
+
 #FUNCION PARA OBTENER LOS FOLLOWS DE UNA NO TERMINAL A PARTIR DE UNA GRAMATICA
 #SE VALIDAN LAS TRES REGLAS, EN EL PRIMER CASO SE EVALUA SI HAY 2 O MÁS PRODUCCIONES CON LA TERMINAL
 # QUE ESTAMOS EVALUANDO EL FOLLOW, COMO PRIMERO SI ES LA PRIMERA TERMINAL SE AÑADE EL $ POR DEFAULT
@@ -38,34 +60,23 @@ def getTerminals (inputsaux, term, terminales, noterminales) :
 # FINALMENTE SI LA REGLA TRES SE ACTIVO SI EL LADO IZQUIERDO ES DIFERENTE DEL VALOR ENTONCES OBTENEMOS LOS FOLLOWS DE IZQUIERDA
 # Y LO AGREGAMOS AL FOLLOW EXCEPTO EL EPSILON
 # FINALMENTE REGRESAMOS
-def getFollows(inputsaux, term, terminales, noterminales):
+def getFollows(inputsaux, term, terminales, noterminales, lastcall = None):
     follows = []
-    #print('1. ', term)
     for renglon in inputsaux:
         regla3 = False
         left, right = renglon.split(' -> ')
         aux = right.split()
         size_r = len(aux)
-        #print(' El tamaño es de ', size_r)
-        #print(' Term is ', term, ' and not terminal is ', noterminales[0])
-        #print('El tamaño de term', len(term), ' el tamaño de notermial es ', len(noterminales[0]))
-        #print(term == noterminales[0])
         if term == noterminales[0] and not '$' in follows:
-            #print(' Es el primero, así que se añade $')
             follows.append('$')
         contador = 0
         for val in aux:
-            #print('Estamos buscando si en ', aux, ' esta ', term)
             if val == term:
-                #print( ' El valor ', val, ' es igual al term ', term)
-                #print('contador es ', contador + 1, ' tamaño es ', size_r)
                 if contador + 1 == size_r:
                     regla3 = True
                 else:
                     if aux[contador + 1] in noterminales:
-                        #print('aux es', aux[contador + 1])
                         firsts = getTerminals(inputsaux,aux[contador + 1],terminales, noterminales )
-                        #print(firsts)
                         if '\'' in firsts:
                             regla3 = True
 
@@ -75,18 +86,14 @@ def getFollows(inputsaux, term, terminales, noterminales):
                     else:
                         follows.append(aux[contador + 1])
                 if regla3:
-                    #print('left is ', left)
-                    if left != val:
-                        #print('Left si es diferente de val')
-                        auxFollow = getFollows(inputsaux, left.strip(), terminales, noterminales)
-                        #print('auxFollo es ', auxFollow)
+                    if left != lastcall:
+                        auxFollow = getFollows(inputsaux, left.strip(), terminales, noterminales,val)
                         for follow in auxFollow:
                             if not follow in follows and follow != '\'':
                                 follows.append(follow)
                 
             contador += 1
 
-    #print('follows de ', term , ' son ', follows)
     return follows
         
 #FINALMENTE, TENEMOS EL SI ES UN LL(1), PARA ESTE CASO VAMOS EVALUANDO POR GRUPO DONDE HAYA DOS O MAS PRODUCCIONES DE 
@@ -101,7 +108,6 @@ def isLL (inputsaux, term, terminales, noterminales):
     _startswith = []
     for renglon in inputsaux:
         left, _ = renglon.split('-> ')
-        #print(' left is size', left.strip(), 'term is ', len(term))
         if left.strip() == term:
             _startswith.append(renglon)
 
@@ -110,28 +116,20 @@ def isLL (inputsaux, term, terminales, noterminales):
     epsilon = 0
 
     if len(_startswith) > 1:
-        #print('las producciones a analizar son: ', _startswith)
         for prod in _startswith:
             aux = prod.split()
-            
-            #print('result is ', aux[2].strip())
             firstaux = []
             valu = aux[2].strip()
-            #print('aux es ', valu)
-            #print( 'el largo de value es ', len(valu) , ' y es ', valu)
             if valu in terminales:
                 firstaux.append(valu)
             else: 
                 firstaux = getTerminals(inputsaux, valu, terminales, noterminales)
-            #print('Los firsts de ', valu, ' son ', firstaux)
             for first in firstaux:
                 if not first in auxFirst:
                     auxFirst.append(first)
                 else:
-                    #print(' No cumple en la primera')
                     return False
                 if aux[2] == '\'':
-
                     epsilon += 1
         
         if (epsilon == 1 ):
@@ -140,28 +138,115 @@ def isLL (inputsaux, term, terminales, noterminales):
             intersec = list(set(follows) & set(firsts))
 
             if(len(intersec) > 0 ):
-                #print(' No cumple en la segunda')
                 return False
         else:
             if (epsilon > 1):
-                #print(' No cumple en la tercera')
                 return False
     
     return True
+
+def BuildHtmlRow(columns, isHeader=False):
+	result = "<tr>"
+
+	if isHeader:
+		rowStart = "<th style=\"border: 1px solid black\">"
+		rowEnd = "</th>"
+	else:
+		rowStart = "<td style=\"border: 1px solid black\">"
+		rowEnd = "</td>"
+	
+
+	for _, value in enumerate(columns) :
+		result += f"\n{rowStart} {value} {rowEnd}\n"
+	
+	result += "</tr>\n"
+
+	return result
+
+
+def  generateTable(inputsaux, terminales, noterminales):
+
+    columnas = terminales
+    columnas.append('$')
+
+    tabla = {}
+    for noterminal in noterminales:
+        tabla[noterminal] = {}
+
+    for noterminal in noterminales:
+        for index, production in enumerate(inputsaux):
+            left, _ = production.split(' -> ')
+            if left == noterminal:
+                firsts = getTerminalsOnlyOne(inputsaux, noterminal, terminales,noterminales, production)
+                for first in firsts:
+                    if first == "\'":
+                        follows = getFollows(inputsaux, noterminal, terminales, noterminales)
+                        for follow in follows:
+                            new_production = "%s -> ' ' " % (noterminal)
+                            tabla[noterminal][follow] = new_production
+                    else:
+                        tabla[noterminal][first] = production
+
+        
+    html_output = ''' 
+		<!DOCTYPE html>
+		<html>
+		<body>
+		<table style="border: 1px solid black"> '''
+
+    header_name = "Non Terminal"
+    header = []
+    header.append(header_name)
+    for terminal in terminales:
+        header.append(terminal)
     
+    html_output += BuildHtmlRow(header, True)
+    
+    for key, values in tabla.items():
+        elements = []
+        elements.append(key)
+        for index, terminal in enumerate(header):
+            if index != 0:
+                element = ''
+                try:
+                    element = values[terminal]
+                except KeyError:
+                    pass
+                elements.append(element)
+        html_output += BuildHtmlRow(elements)
+    
+    html_output += '''
+		</table>
+		</body>
+		</html> '''
+    
+    file = open('output.html', "w")
+    file.write(html_output)
+    file.close()
+        
+
+
 
 #AUXILIARES PARA GUARDAR ENTRADAS, Y SEPARAR IZQUIERDA DE LA -> Y DERECHA
 inputs = []
+cadenasValidad = []
 left=[]
 right=[]
 
+
 #LEEMOS EL NUMERO DE ENTRADAS QUE TENDREMOS
 veces = int(input())
+n_validar = int(input())
+
 
 #EMPEZAMOS A LEER Y LO GUARDAMOS EN UNA LISTA INPUTS
 for i in range(0,veces):
     _input = input()
     inputs.append(_input)
+
+for i in range(0, n_validar):
+    _cadena = input()
+    cadenasValidad.append(_cadena)
 
 #AUXILIAR PARA SACAR CADA ELEMENTO DE CADA RENGLON LEIDO
 aux = []
@@ -235,11 +320,10 @@ for noterminal in NonTerminal:
         _isLL = isLL(inputs, noterminal,Terminal, NonTerminal)
 
 if _isLL:
-    _ans = 'Yes'
+    generateTable(inputs,Terminal,NonTerminal)
 else: 
-    _ans = 'No'
+    print('Grammar is not LL(1)!')
 
-print('LL(1)?', _ans)
 
 
 
