@@ -12,6 +12,7 @@
 # SIGUIENTES FIRSTS DE LA TERMINAL ENCONTRADA
 # AGREGA EL EPSILON SI SE ENCUENTRA EL CASO, ESTO LO AGREGAMOS A LA LISTA FIRST PARA PODER IR GUARDANDOLOS.
 
+from cmath import pi
 from email import header
 
 
@@ -182,7 +183,7 @@ def  generateTable(inputsaux, terminales, noterminales):
                     if first == "\'":
                         follows = getFollows(inputsaux, noterminal, terminales, noterminales)
                         for follow in follows:
-                            new_production = "%s -> ' ' " % (noterminal)
+                            new_production = "%s -> ' '" % (noterminal)
                             tabla[noterminal][follow] = new_production
                     else:
                         tabla[noterminal][first] = production
@@ -223,9 +224,55 @@ def  generateTable(inputsaux, terminales, noterminales):
     file = open('output.html', "w")
     file.write(html_output)
     file.close()
+
+    return tabla
         
 
+def checkString(inputsaux, input, tabla):
+    #print(inputsaux)
+    pila = []
+    left, _ = inputsaux[0].split(' -> ') 
+    first_symbol = left
 
+    #print(first_symbol)
+    pila.append('$')
+    pila.append(first_symbol)
+
+    input_fila = input.split(" ")
+    input_fila.append('$')
+
+    while True:
+        #print('Pila: ', pila)
+        #print('Fila ', input_fila)
+        if pila == []:
+            return True
+        else:
+            element = pila[-1]
+            fila_element = input_fila[0]
+
+            if element == fila_element:
+                pila.pop()
+                input_fila.pop(0)
+                continue
+                
+            try:
+                element = tabla[element][fila_element]
+            except KeyError:
+                #print('elemento es ', element, 'fila es ', fila_element)
+                return False
+
+            pila.pop()
+            _, right = element.split(' -> ')
+
+            #print(right)
+            if right == "\' \'":
+                #print("true")
+                continue
+
+            tokens = right.split(" ")
+            tokens.reverse()
+            for token in tokens:
+                pila.append(token)
 
 #AUXILIARES PARA GUARDAR ENTRADAS, Y SEPARAR IZQUIERDA DE LA -> Y DERECHA
 inputs = []
@@ -320,7 +367,13 @@ for noterminal in NonTerminal:
         _isLL = isLL(inputs, noterminal,Terminal, NonTerminal)
 
 if _isLL:
-    generateTable(inputs,Terminal,NonTerminal)
+    tabla = generateTable(inputs,Terminal,NonTerminal)
+    for cadena in cadenasValidad:
+        #print(cadena)
+        if checkString(inputs, cadena, tabla):
+            print('Yes!!!')
+        else:
+            print('No !!!')
 else: 
     print('Grammar is not LL(1)!')
 
