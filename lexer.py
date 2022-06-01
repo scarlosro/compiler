@@ -2,20 +2,20 @@
 # CARLOS ALFONSO SANCHEZ ROSALES
 # A01703280 
 # ITESM CAMPUS QRO
-# 29 ABRIL 2022
+# 01 JUNIO 2022
 
 #PARA CORRER ES python3 lexer.py, e ingresamos el numero y posteriormente las n instrucciones.
 
 #FUNCION PARA DETERMINAR LOS FIRSTS DE LAS NOTERMINALES, A PARTIR DE SUS PRODUCCIONES
-# SE APLICAN LAS TRES REGLAS, POR LO CUAL, SE DIVIDE LA PRODUCCIÓN PARA IR EVALUANDO EL PRIMER ELEMENTO Y ES QUE SI
-# SE APLICA LA PRIMER REGLA SI EL PRIMER X ES TERMINAL SE AGREGA, SI ES UN NO TERMINAL REALIZA LA RECURSION PARA CALCULAR LOS
-# SIGUIENTES FIRSTS DE LA TERMINAL ENCONTRADA
-# AGREGA EL EPSILON SI SE ENCUENTRA EL CASO, ESTO LO AGREGAMOS A LA LISTA FIRST PARA PODER IR GUARDANDOLOS.
+
 
 from cmath import pi
 from email import header
 
-
+# SE APLICAN LAS TRES REGLAS, POR LO CUAL, SE DIVIDE LA PRODUCCIÓN PARA IR EVALUANDO EL PRIMER ELEMENTO Y ES QUE SI
+# SE APLICA LA PRIMER REGLA SI EL PRIMER X ES TERMINAL SE AGREGA, SI ES UN NO TERMINAL REALIZA LA RECURSION PARA CALCULAR LOS
+# SIGUIENTES FIRSTS DE LA TERMINAL ENCONTRADA
+# AGREGA EL EPSILON SI SE ENCUENTRA EL CASO, ESTO LO AGREGAMOS A LA LISTA FIRST PARA PODER IR GUARDANDOLOS.
 def getTerminals (inputsaux, term, terminales, noterminales) :
     firsts = []
     for renglon in inputsaux:
@@ -32,7 +32,7 @@ def getTerminals (inputsaux, term, terminales, noterminales) :
                         firsts.append(first)
     return firsts
 
-
+#FUNCION QUE SOLO RETORNA LOS FIRST DE UNA PRODUCCIÓN 
 def getTerminalsOnlyOne (inputsaux, term, terminales, noterminales, production) :
     firsts = []
     for renglon in inputsaux:
@@ -146,6 +146,7 @@ def isLL (inputsaux, term, terminales, noterminales):
     
     return True
 
+#FUNCION QUE GENERA EL FORMATO HTML PARA PODER IMPRIMIR LA TABLA LL1
 def BuildHtmlRow(columns, isHeader=False):
 	result = "<tr>"
 
@@ -164,7 +165,11 @@ def BuildHtmlRow(columns, isHeader=False):
 
 	return result
 
-
+#FUNCION QUE GENERA LA TABLA, LA CUAL SE AGREGA POR DEFAULT EL $
+#A TRAVÉS DE UN DICCIONARIO VAMOS GUARDANDO LA PRODUCCION QUE CUMPLE 
+# LAS REGLAS PARA ASIGNARLO DENTRO DEL DICCIONARIO, SACANDO EL FIRST Y LOS FOLLOWS
+# DE ACUERDO A LA REGLA QUE CORRESPONDAN
+# POSTERIORMENTE SE GENERA LA TABLA HTML Y EL ARCHIVO DE SALIDA COMO OUTPUT.HTML
 def  generateTable(inputsaux, terminales, noterminales):
 
     columnas = terminales
@@ -227,7 +232,10 @@ def  generateTable(inputsaux, terminales, noterminales):
 
     return tabla
         
-
+# FUNCION PARA VALIDAR SI UNA CADENA ES ACEPTADA O NO, 
+# ESTO A TRAVES DE UNA PILA Y UNA FILA PARA PODER HACER LOS POP
+# MIENTRAS LA PILA NO ESTE VACIA O VEAMOS QUE NO SE PUEDE SEGUIR
+# EL CICLO SEGUIRA CORRIENDO HASTA ENCONTRAR SI SÍ O NO
 def checkString(inputsaux, input, tabla):
     #print(inputsaux)
     pila = []
@@ -249,12 +257,12 @@ def checkString(inputsaux, input, tabla):
         else:
             element = pila[-1]
             fila_element = input_fila[0]
-
+            #VALIDAMOS SI EL ELEMENTO ES IGUAL A LA FILA Y HACEMOS POP
             if element == fila_element:
                 pila.pop()
                 input_fila.pop(0)
                 continue
-                
+            # BUSCAMOS EN EL DICCIONARIO, SI NO, ROMPEMOS EL CICLO RETORNANDO FALSE QUE NO ES VALIDA    
             try:
                 element = tabla[element][fila_element]
             except KeyError:
@@ -265,10 +273,11 @@ def checkString(inputsaux, input, tabla):
             _, right = element.split(' -> ')
 
             #print(right)
+            #VALIDAMOS SI ES UN EPSILON
             if right == "\' \'":
                 #print("true")
                 continue
-
+            # PARA AÑADIR A LA PILA
             tokens = right.split(" ")
             tokens.reverse()
             for token in tokens:
@@ -343,7 +352,7 @@ auxNTerminal = separator.join(NonTerminal)
 #print('Non terminal: ', auxNTerminal)
 
 # CICLO PARA SACAR LOS FIRSTS Y FOLLOS DE UN NO TERMINAL
-for noterminal in NonTerminal:
+'''for noterminal in NonTerminal:
     firsts = getTerminals(inputs, noterminal,Terminal, NonTerminal)
     #print(' firsts de ', noterminal, 'son ', firsts)
     cont = 0
@@ -357,7 +366,7 @@ for noterminal in NonTerminal:
     aFirst = separator.join(firsts)
     aFollows = separator.join(follows)
     #print(' firsts previos', firsts)
-    print(noterminal, '=> FIRST = {',aFirst,'}, FOLLOW = {', aFollows,'}')
+    print(noterminal, '=> FIRST = {',aFirst,'}, FOLLOW = {', aFollows,'}')'''
 
 #CICLO PARA EVALUAR SI ES LL(1), EN CUANTO ENCUENTRE QUE UN CONJUNTO NO CUMPLIO SE ROMPE EL CICLO Y SE DEFINE COMO NO LL YA QUE
 # SIEMPRE DEBE CUMPLIR TODOS ESA REGLA
@@ -365,15 +374,17 @@ _isLL = True
 for noterminal in NonTerminal:
     if _isLL:
         _isLL = isLL(inputs, noterminal,Terminal, NonTerminal)
-
+#VALIDAMOS SI ES LL1 SI ES ASÍ EMPEZAMOS A VALIDAR CADENA POR CADENA, DE LO CONTRARIO IMPRIMIMOS QUE NO ES GRAMAR LL1
 if _isLL:
+    count = 1
     tabla = generateTable(inputs,Terminal,NonTerminal)
     for cadena in cadenasValidad:
         #print(cadena)
         if checkString(inputs, cadena, tabla):
-            print('Yes!!!')
+            print('input #',count,': Yes',)
         else:
-            print('No !!!')
+            print('input #',count,': No',)
+        count = count + 1
 else: 
     print('Grammar is not LL(1)!')
 
